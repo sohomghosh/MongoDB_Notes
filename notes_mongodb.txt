@@ -1,0 +1,174 @@
+##Installations
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+
+#Data storage
+stores its data files in /var/lib/mongodb 
+#can be changed by changing storage.dbPath in the configuration file
+
+
+#Log file storage
+stores its log files in /var/log/mongodb
+#can be changed by changing systemLog.path in the configuration file
+
+
+#Configuration file
+/etc/mongod.conf
+#More deatils: https://docs.mongodb.com/manual/reference/configuration-options/#use-the-configuration-file
+
+
+#Start
+sudo service mongod start
+
+#Verify mongod started by
+cat /var/log/mongodb/mongod.log
+
+#Stop
+sudo service mongod stop
+
+#Restart
+sudo service mongod restart
+
+#Remove / uninstall mongodb
+sudo apt-get purge mongodb-org*
+
+#Removing data and log
+sudo rm -r /var/log/mongodb
+sudo rm -r /var/lib/mongodb
+
+#Start mongo shell
+mongo
+/usr/bin/./mongo
+
+
+##########Connecting mongodb to python########
+from pymongo import MongoClient
+
+client = MongoClient('mongodb://localhost:27017/')
+mydb = client['test-database']
+mydb.collections
+#mydb.create_collection('new_post_collection')
+#mydb.new_post_collection.drop()
+
+import datetime
+post = {"author": "Duke 5","title" : "PyMongo 101 - 5","tags" : ["MongoDB 5", "PyMongo 101 - A5", "Tutorial 5"],"date" : datetime.datetime.utcnow()}
+
+post_id = mydb.new_post_collection.insert(post)
+
+print(post_id)
+print(mydb.collection_names())
+
+
+new_posts = [{"author": "Duke 6","title" : "PyMongo 101-A6","tags" : ["MongoDB 6", "PyMongo 6", "Tutorial 6"], "date" : datetime.datetime(2015, 11, 28, 11, 13)}, {"author": "Adja", "title": "MongoDB 101-A7", "note": "Schema free MongoDB", "date": datetime.datetime(2015, 11, 29, 11, 42)}]
+
+mydb.new_post_collection.insert(new_posts)
+for post in mydb.new_post_collection.find({"author": "Adja"}):
+	print(post)
+
+for post in mydb.new_post_collection.find():
+	print(post)
+
+mydb.new_post_collection.find_one({"author": "Duke 5"})
+import pprint
+d = datetime.datetime(2015, 11, 29, 12)
+for post in mydb.new_post_collection.find({"date": {"$lt": d}}).sort("author"):
+	pprint.pprint(post)
+
+doc1 = {"title": "Intro to MongoDB and Python", "publication_date": datetime.datetime(2015, 9, 7), "likes": 10}
+
+doc2 = {"title": "Intro to Neo4J and Python", "publication_date": datetime.datetime(2015, 9, 1), "likes": 5}
+doc3 = {"title": "Intro to Elasticsearch and Python", "publication_date": datetime.datetime(2015, 8, 1), "likes": 15}
+mydb.new_post_collection.insert_many([doc1, doc2, doc3])
+
+
+from pymongo import ASCENDING, DESCENDING
+ 
+# get all docs, sort by number of likes high-to-low
+results = mydb.new_post_collection.find().sort("likes", DESCENDING)
+for doc in results:
+    print(doc)
+
+
+#How many documents match a query - count()
+mydb.new_post_collection.count()
+
+----------------------------------------------------------------
+
+query = {
+    "publication_date": {
+        "$gte": datetime(2015, 9, 1)
+    },
+    "likes": {
+        "$gt": 5
+    }
+}
+results = coll.find(query)
+for doc in results:
+    print(doc)
+
+
+################################################
+#On Live server
+
+
+from pymongo import MongoClient
+
+client = MongoClient('mongodb://172.xx.yy.zzz:17398')
+mydb = client['amar_db']
+#database name amar_db
+
+k=0
+for i in mydb.compTenure.find():
+	print(i)
+	if k>=10:
+		break
+	k = k + 1	
+
+###############################################
+#Source: https://www.analyticsvidhya.com/blog/2015/06/beginners-guide-mongodb/
+
+# GridFS is a specification for storing and retrieving files that exceed the BSON-document size limit of 16MB. Instead of storing a file in a single document, GridFS divides a file into parts, and stores each part as a separate document. GridFS uses two collections to store files. One collection stores the file chunks, and the other stores file metadata
+
+# Sharding  or Horizontal Scaling: By contrast, it divides the data set and distributes the data over multiple servers-shards. Each shard is an independent database and collectively shards make up a single database. MongoDB supports sharding through the configuration of sharded clusters. Shards are used to store the data. Query Routers, or mongos instances, interface with client applications and direct operations to the appropriate shard or shards and then returns results to the clients. Config servers stores the cluster’s metadata. This data contains a mapping of the cluster’s data set to the shards. The query router uses this metadata to target operations to specific shards.
+	-> Range Based Sharding: Consider a numeric shard key: If you visualize a number line that goes from negative infinity to positive infinity, each value of the shard key falls at some point on that line. MongoDB partitions this line into smaller, non-overlapping ranges called chunks. It is a range of values from some minimum value to some maximum value (shown below). In a range based partitioning system, documents with “close” shard key values are most probably in the same chunk, and thus on the same shard.
+	-> Hash Based Sharding: For hash based partitioning, MongoDB computes a hash -A hash value is a numeric value of a fixed length that uniquely identifies data. These values represent large amounts of data as much smaller numeric values of a field’s value, and then uses these hashes to create chunks (shown below). With hash based partitioning, two documents with “close” shard key values are unlikely to be part of the same chunk. This ensures a more random distribution of a collection in the cluster.
+
+#Aggregation: Aggregations are operations that process data records and return computed results. Unlike queries, aggregation operations in MongoDB use collections of documents as an input and return results in the form of one or more documents. MapReduce is a tool used for aggregating data.
+	Single Purpose Aggregation Operations
+	MapReduce based aggregation
+
+#Indexes: Indexes are special data structures that store a small portion of the collection’s data set in an easy to traverse form. The index stores the value of a specific field or set of fields, ordered by the value of the field. The ordering of the index entries supports efficient equality matches and range-based query operations. In addition, MongoDB can return sorted results by using the ordering in the index. Adding an index has some negative performance impact for write operations. For collections with high write-to-read ratio, indexes are expensive since each insert must also update any indexes.
+
+#Replication: Replication provides redundancy and increases data availability. With multiple copies of data on different database servers, replication protects a database from the loss of a single server allows for  recovery from hardware failure and service interruptions. A replica set is a group of mongodb instances that host the same data set. One mongodb, the primary, receives all write operations. The secondaries replicate the primary’s oplog and apply the operations to their data sets such that the secondaries data sets reflect the primary’s data set. If the primary is unavailable, the replica set will elect a secondary to be primary. When a primary does not communicate with the other members of the set for more than 10 seconds, the replica set will attempt to select another member to become the new primary. 
+
+#Advantage of MongoDB: 1) Store unstructured & semi-structured data 2) when the number of queries hitting the server increases MongoDB is a clear winner. 
+
+#Disadvantage of MongoDB: 1) Group command doesn’t work in sharded cluster. 2) Max document size is 16 MB. 3) Individual (not multi) updates/removes in a sharded cluster must include shard key. Multi versions of these commands may not include shard key.
+
+##############################################
+
+#aggregate
+#own function define using javascript
+#projection - add, rename, remove
+#make field with all unique value
+#How to query a field within a array, string, int
+#procedure in mongodb : reusing saved query
+#Wired Tiger
+#Regex query in mongodb
+#Insertion in mongodb table
+#Indexing in mongodb table
+#Pyspark with mongodb: https://www.mongodb.com/products/spark-connector?_ga=2.261494669.1676495096.1511346685-1965177837.1511346685  ;  https://docs.mongodb.com/spark-connector/master/python-api/  ;  https://docs.mongodb.com/spark-connector/master/python/filters-and-sql/  ;  https://docs.mongodb.com/spark-connector/master/python/write-to-mongodb/ ; https://docs.mongodb.com/spark-connector/master/python/read-from-mongodb/  ;  https://docs.mongodb.com/spark-connector/master/python/aggregation/
+	from pyspark.sql import SparkSession
+	my_spark = SparkSession \
+    .builder \
+    .appName("myApp") \
+    .config("spark.mongodb.input.uri", "mongodb://127.0.0.1/test.coll") \
+    .config("spark.mongodb.output.uri", "mongodb://127.0.0.1/test.coll") \
+    .getOrCreate()
+	df = spark.read.format("com.mongodb.spark.sql.DefaultSource").load()
+	pipeline = "{'$match': {'type': 'apple'}}"
+	df = spark.read.format("com.mongodb.spark.sql.DefaultSource").option("pipeline", pipeline).load()
+	df.show()
