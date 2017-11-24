@@ -172,3 +172,410 @@ for i in mydb.compTenure.find():
 	pipeline = "{'$match': {'type': 'apple'}}"
 	df = spark.read.format("com.mongodb.spark.sql.DefaultSource").option("pipeline", pipeline).load()
 	df.show()
+
+##############################################
+#Wired Tiger : WiredTiger uses document-level concurrency control for write operations. As a result, multiple clients can modify different documents of a collection at the same time. WiredTiger uses MultiVersion Concurrency Control (MVCC). At the start of an operation, WiredTiger provides a point-in-time snapshot of the data to the transaction. A snapshot presents a consistent view of the in-memory data. The checkpoint ensures that the data files are consistent up to and including the last checkpoint; i.e. checkpoints can act as recovery points. MongoDB configures WiredTiger to create checkpoints (i.e. write the snapshot data to disk) at intervals of 60 seconds or 2 gigabytes of journal data. With WiredTiger, MongoDB utilizes both the WiredTiger internal cache and the filesystem cache.  MongoDB provides a document-level concurrency model, checkpointing, and compression, among other features. In MongoDB Enterprise, WiredTiger also supports Encryption At Rest.
+#Source: https://docs.mongodb.com/manual/core/wiredtiger/ , https://en.wikipedia.org/wiki/WiredTiger
+
+
+
+##############################################
+
+#Find all documents
+cursor = db.restaurants.find()
+
+##Query by a Top Level Field
+#Syntax: { <field1>: <value1>, <field2>: <value2>, ... }
+cursor = db.restaurants.find({"borough": "Manhattan"})
+
+##Query by a Field in an Embedded Document
+#The following operation specifies an equality condition on the zipcode field in the address embedded document.
+cursor = db.restaurants.find({"address.zipcode": "10075"})
+
+##Query by a Field in an Array
+#The following queries for documents whose grades array contains an embedded document with a field grade equal to "B".
+cursor = db.restaurants.find({"grades.grade": "B"})
+
+##Specify Conditions with Operators
+#Syntax: { <field1>: { <operator1>: <value1> } }
+#Query for documents whose grades array contains an embedded document with a field score greater than 30
+cursor = db.restaurants.find({"grades.score": {"$gt": 30}})
+#lesser than 30
+cursor = db.restaurants.find({"grades.score": {"$lt": 10}})
+
+#Logical AND
+cursor = db.restaurants.find({"cuisine": "Italian", "address.zipcode": "10075"})
+
+#Logical OR
+cursor = db.restaurants.find({"$or": [{"cuisine": "Italian"}, {"address.zipcode": "10075"}]})
+
+#Indexing
+#SYNTAX: [ ( <field1>: <type1> ), ... ]
+result = db.profiles.create_index([('user_id', pymongo.ASCENDING)], unique=True)
+sorted(list(db.profiles.index_information()))
+db.restaurants.create_index([("cuisine", pymongo.ASCENDING)])
+#The method returns the name of the created index.
+#"u'cuisine_1'"
+
+#Creating complex index
+db.restaurants.create_index([
+    ("cuisine", pymongo.ASCENDING),
+    ("address.zipcode", pymongo.DESCENDING)
+])
+
+
+#Update Top-Level Fields
+#The following operation updates the first document with name equal to "Juni", using the $set operator to update the cuisine field and the $currentDate operator to update the lastModified field with the current date.
+result = db.restaurants.update_one(
+    {"name": "Juni"},
+    {
+        "$set": {
+            "cuisine": "American (New)"
+        },
+        "$currentDate": {"lastModified": True}
+    }
+)
+
+
+result.matched_count
+result.modified_count
+
+#Update Multiple Documents
+#The following operation updates all documents that have address.zipcode field equal to "10016" and cuisine field equal to "Other", setting the cuisine field to "Category To Be Determined" and the lastModified field to the current date.
+
+result = db.restaurants.update_many(
+    {"address.zipcode": "10016", "cuisine": "Other"},
+    {
+        "$set": {"cuisine": "Category To Be Determined"},
+        "$currentDate": {"lastModified": True}
+    }
+)
+
+
+#Replace a Document
+#To replace the entire document except for the _id field, pass an entirely new document as the second argument to the update() method. The replacement document can have different fields from the original document. In the replacement document, you can omit the _id field since the _id field is immutable. If you do include the _id field, it must be the same value as the existing value.
+#After the following update, the modified document will only contain the _id field, name field, the address field. i.e. the document will not contain the restaurant_id, cuisine, grades, and the borough fields.
+result = db.restaurants.replace_one(
+    {"restaurant_id": "41704620"},
+    {
+        "name": "Vella 2",
+        "address": {
+            "coord": [-73.9557413, 40.7720266],
+            "building": "1480",
+            "street": "2 Avenue",
+            "zipcode": "10075"
+        }
+    }
+)
+
+
+#Remove data with PyMongo
+result = db.restaurants.delete_many({"borough": "Manhattan"})
+result = db.restaurants.delete_one({"borough": "Manhattan"})
+result.deleted_count
+
+#Remove All Documents
+result = db.restaurants.delete_many({})
+
+#Drop a Collection
+db.restaurants.drop()
+
+
+
+###Aggregation
+#SYNTAX:  db.collection.aggregate([<stage1>, <stage2>, ...])
+
+stargroup=db.reviews.aggregate(
+// The Aggregation Pipeline is defined as an array of different operations
+[
+// The first stage in this pipe is to group data on filed "rating" and assign it to "_id"
+{ '$group':
+    { '_id': "$rating",
+     "count" : 
+                 { '$sum' :1 }
+    }
+},
+
+
+//The second stage in this pipe is to sort the data in ascending order; use -1 instead of 1 to sort in descending order
+{"$sort":  { "_id":1}
+}
+// Close the array with the ] tag             
+)
+
+
+# Print the result
+for group in stargroup:
+    print(group)
+
+
+#Group Documents by a Field and Calculate Count
+cursor = db.restaurants.aggregate(
+    [
+        {"$group": {"_id": "$borough", "count": {"$sum": 1}}}
+    ]
+)
+
+#Filter and Group Documents
+cursor = db.restaurants.aggregate(
+    [
+        {"$match": {"borough": "Queens", "cuisine": "Brazilian"}},
+        {"$group": {"_id": "$address.zipcode", "count": {"$sum": 1}}}
+    ]
+)
+
+#Text Index
+db.stores.createIndex( { name: "text", description: "text" } )
+
+
+$text Operator
+$text will tokenize the search string using whitespace and most punctuation as delimiters, and perform a logical OR of all such tokens in the search string. For example, you could use the following query to find all stores containing any terms from the list “coffee”, “shop”, and “java”:
+
+db.stores.find( { $text: { $search: "java coffee shop" } } )
+
+
+#Exact Phrase:  
+db.stores.find( { $text: { $search: "java \"coffee shop\"" } } )
+
+#You can also search for exact phrases by wrapping them in double-quotes. For example, the following will find all documents containing “java” or “coffee shop”:
+
+db.stores.find( { $text: { $search: "java \"coffee shop\"" } } )
+
+#Term Exclusion
+#To exclude a word, you can prepend a “-” character. For example, to find all stores containing “java” or “shop” but not “coffee”, use the following:
+
+db.stores.find( { $text: { $search: "java shop -coffee" } } )
+
+
+
+
+#Sorting
+#MongoDB will return its results in unsorted order by default. However, text search queries will compute a relevance score for each document that specifies how well a document matches the query. To sort the results in order of relevance score, you must explicitly project the $meta textScore field and sort on it:
+
+db.stores.find(
+   { $text: { $search: "java coffee shop" } },
+   { score: { $meta: "textScore" } }
+).sort( { score: { $meta: "textScore" } } )
+
+
+##Regex
+#https://docs.mongodb.com/manual/reference/operator/query/regex/
+#The following regex query searches for all the posts containing string tutorialspoint in it
+db.posts.find({post_text:{$regex:"tutorialspoint"}})
+
+{ name: { $in: [ /^acme/i, /^ack/ ] } }
+{ name: { $regex: /acme.*corp/i, $nin: [ 'acmeblahcorp' ] } }
+{ name: { $regex: /acme.*corp/, $options: 'i', $nin: [ 'acmeblahcorp' ] } }
+{ name: { $regex: 'acme.*corp', $options: 'i', $nin: [ 'acmeblahcorp' ] } }
+
+##Perform a LIKE Match
+#The following example matches all documents where the sku field is like "%789":
+db.products.find( { sku: { $regex: /789$/ } } )
+
+##Multiline Match for Lines Starting with Specified Pattern
+db.products.find( { description: { $regex: /^S/, $options: 'm' } } )
+
+#If the $regex pattern does not contain an anchor, the pattern matches against the string as a whole, as in the following example:
+db.products.find( { description: { $regex: /S/ } } )
+
+#Perform Case-Insensitive Regular Expression Match
+#The following example uses the i option perform a case-insensitive match for documents with sku value that starts with ABC.
+db.products.find( { sku: { $regex: /^ABC/i } } )
+
+#Use the . Dot Character to Match New Line
+db.products.find( { description: { $regex: /m.*line/, $options: 'si' } } )
+
+#Ignore White Spaces in Pattern
+#The following example uses the x option ignore white spaces and the comments, denoted by the # and ending with the \n in the matching pattern:
+
+var pattern = "abc #category code\n123 #item number"
+db.products.find( { sku: { $regex: pattern, $options: "x" } } )
+#To make the search case insensitive, we use the $options parameter with value $i
+db.posts.find({post_text:{$regex:"tutorialspoint",$options:"$i"}})
+
+
+#Using regex for Array Elements
+#if you want to search for all the posts having tags beginning from the word tutorial (either tutorial or tutorials or tutorialpoint or tutorialphp), you can use the following code
+db.posts.find({tags:{$regex:"tutorial"}})
+
+db.compTenure.find( { "tenures.roleN": { $regex: /^Acc/i} } ).count();
+
+
+master/slave configuration
+
+step 1:- 
+	run mongo :-mongod --dbpath /opt/mongodb3/data --port 27019 --logpath /opt/mongodb3/mongo.log --fork --replSet test
+step 2:- 
+	login in master 
+	1:- rs.initiate()
+	2:- rs.status()
+	3:- rs.add("host:port")
+	4:- rs.status()
+	5:- rs.slaveOk()
+
+step 3:- 
+	login in slave 
+	1:- rs.status()
+	2:- rs.slaveOk()
+
+NOTE:- ssh enable for both tth servers
+
+
+
+#toArray() converts javascript objects to array. Example:
+db.compTenure.find().toArray()
+
+#mongodb create backup
+mongodump
+mongodump --host HOST_NAME --port PORT_NUMBER
+mongodump --dbpath DB_PATH --out BACKUP_DIRECTORY
+mongodump --collection COLLECTION --db DB_NAME
+
+#mongodb restore
+mongorestore
+
+###Copying a Database
+from pymongo import MongoClient
+client = MongoClient('target.example.com')
+client.admin.command('copydb', fromdb='source_db_name', todb='target_db_name')
+client = MongoClient('target.example.com', username='administrator', password='pwd')
+client.admin.command('copydb', fromdb='source_db_name', todb='target_db_name', fromhost='source.example.com')
+
+##Ordered Bulk Write Operations
+from pprint import pprint
+from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
+result = db.test.bulk_write([
+		DeleteMany({}),  # Remove all documents from the previous example.
+        InsertOne({'_id': 1}),
+        InsertOne({'_id': 2}),
+        InsertOne({'_id': 3}),
+        UpdateOne({'_id': 1}, {'$set': {'foo': 'bar'}}),
+        UpdateOne({'_id': 4}, {'$inc': {'j': 1}}, upsert=True),
+        ReplaceOne({'j': 1}, {'j': 2})])
+
+
+pprint(result.bulk_api_result)
+
+#LIMIT
+db.COLLECTION_NAME.find().limit(NUMBER)
+
+#SKIP
+db.COLLECTION_NAME.find().limit(NUMBER).skip(NUMBER)
+
+#High Availability and PyMongo
+#Source: http://api.mongodb.com/python/current/examples/high_availability.html
+mkdir -p /data/db0 /data/db1 /data/db2
+mongod --port 27017 --dbpath /data/db0 --replSet foo
+mongod --port 27018 --dbpath /data/db1 --replSet foo
+mongod --port 27019 --dbpath /data/db2 --replSet foo
+
+from pymongo import MongoClient
+c = MongoClient('localhost', 27017)
+
+config = {'_id': 'foo', 'members': [{'_id': 0, 'host': 'localhost:27017'},{'_id': 1, 'host': 'localhost:27018'},{'_id': 2, 'host': 'localhost:27019'}]}
+c.admin.command("replSetInitiate", config)
+
+#mongo Load Balancing
+client = MongoClient('mongodb://host1,host2,host3')
+client = MongoClient('mongodb://host1,host2,host3/?localThresholdMS=30')
+
+var fDate=new Date();
+        fDate.setTime(date);
+        var day = fDate.getDate();
+        var month = fDate.getMonth();
+        var year = fDate.getFullYear();
+        var dateString=year+"-"+(month+1)+"-"+day;
+
+var dataLogger=db.getSiblingDB("dataLogger");
+
+/opt/mongoDB3.2/bin/mongoexport --port 17089   --db database_name --collection collection_name   -q '{"d":"h","ts":{$gte:"1472688000"} }' --type=csv --fields f.field1,f.field2 --out /tmp/table_exported.csv
+
+/opt/mongoDB3.2/bin/mongo --port 17449 name_of_javascript_file.js >exported_file.csv
+
+#################################### COMPARISON OF MONGODB WITH SQL######################################
+https://docs.mongodb.com/manual/reference/sql-aggregation-comparison/
+#########################################################################################################
+WHERE	$match
+GROUP BY	$group
+HAVING	$match
+SELECT	$project
+ORDER BY	$sort
+LIMIT	$limit
+SUM()	$sum
+COUNT()	$sum
+join	$lookup
+
+#####Reference: http://api.mongodb#.com/python/current/examples/
+###Detailed Link: http://api.mongodb.com/python/current/api/pymongo/collection.html?_ga=2.199105455.1676495096.1511346685-1965177837.1511346685
+
+########## JAVASCRIPT ###############
+function getMonthData(result){
+    var data=result["result"];
+    var finalData={};
+#####################################
+
+function getDayOfYear(year,month,day){
+	var requestedDate = new Date(year, month, day, 0, 0, 0);
+	var startofyear=new Date(year, 0, 1);
+	var one_day=1000*60*60*24;
+	var dayYear = Math.ceil((requestedDate.getTime() - startofyear.getTime()) / one_day) + 1;
+    return dayYear+"";
+}
+
+var sDate=getDayOfYear(2007,6,29);
+var eDate=getDayOfYear(2007,6,29);
+var dataLogger=db.getSiblingDB("dataLogger");
+dataLogger.getCollection('abc').aggregate([{$match:{ "dy" : { "$gte" :sDate , "$lte" :eDate }   }},
+       {$group : {_id : {adId:"$adId",dy:"$dy"},
+		see_count : {$sum : {$cond : [ {$eq : [ '$a', 's' ]}, 1, 0 ]}},
+		apply_count : {$sum : {$cond : [ {$eq : [ '$a', 'a' ]}, 1, 0 ]}}
+		}
+	}, { $out:"output"}],{allowDiskUse:true});
+
+####################################
+db.system.js.save(
+   {
+     _id : "myAddFunction" ,
+     value : function (x, y){ return x + y; }
+   }
+);
+
+myAddFunction(3, 5);
+db.system.js.remove({_id: "myAddFunction"});
+
+##### Purging data i.e. deleting old data to create space for new data
+use remove() function for this
+
+####################################### 
+
+#Pyspark with mongodb: https://www.mongodb.com/products/spark-connector?_ga=2.261494669.1676495096.1511346685-1965177837.1511346685  ;  https://docs.mongodb.com/spark-connector/master/python-api/  ;  https://docs.mongodb.com/spark-connector/master/python/filters-and-sql/  ;  https://docs.mongodb.com/spark-connector/master/python/write-to-mongodb/ ; https://docs.mongodb.com/spark-connector/master/python/read-from-mongodb/  ;  https://docs.mongodb.com/spark-connector/master/python/aggregation/
+
+/opt/spark-2.1.0-bin-hadoop2.7/bin/./pyspark --conf "spark.mongodb.input.uri=mongodb://127.0.0.1/test.myCollection?readPreference=primaryPreferred" \
+              --conf "spark.mongodb.output.uri=mongodb://127.0.0.1/test.myCollection" \
+              --packages org.mongodb.spark:mongo-spark-connector_2.11:2.2.0
+
+from pyspark.sql import SparkSession
+
+my_spark = SparkSession \
+    .builder \
+    .appName("myApp") \
+    .config("spark.mongodb.input.uri", "mongodb://127.0.0.1/test.coll") \
+    .config("spark.mongodb.output.uri", "mongodb://127.0.0.1/test.coll") \
+    .getOrCreate()
+
+
+df = spark.read.format("com.mongodb.spark.sql.DefaultSource").option("uri","mongodb://127.0.0.1/people.contacts").load()
+
+df = spark.read.format("com.mongodb.spark.sql.DefaultSource").load()
+pipeline = "{'$match': {'type': 'apple'}}"
+df = spark.read.format("com.mongodb.spark.sql.DefaultSource").option("pipeline", pipeline).load()
+df.show()
+
+#Write a pyspark dataframe to MongoDB
+people = spark.createDataFrame([("Bilbo Baggins",  50), ("Gandalf", 1000), ("Thorin", 195), ("Balin", 178), ("Kili", 77),
+   ("Dwalin", 169), ("Oin", 167), ("Gloin", 158), ("Fili", 82), ("Bombur", None)], ["name", "age"])
+people.write.format("com.mongodb.spark.sql.DefaultSource").mode("append").save()
+people.show()
+
+people.write.format("com.mongodb.spark.sql.DefaultSource").mode("append").option("database",
+"people").option("collection", "contacts").save()
