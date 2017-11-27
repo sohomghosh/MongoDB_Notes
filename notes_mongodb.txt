@@ -547,6 +547,27 @@ db.system.js.remove({_id: "myAddFunction"});
 
 ##### Purging data i.e. deleting old data to create space for new data
 use remove() function for this
+#######################################
+#https://docs.mongodb.com/manual/core/journaling/
+
+Journal
+A sequential, binary transaction log used to bring the database into a valid state in the event of a hard shutdown. Journaling writes data first to the journal and then to the core data files. MongoDB enables journaling by default for 64-bit builds of MongoDB version 2.0 and newer. Journal files are pre-allocated and exist as files in the data directory
+
+With journaling, the recovery process:
+Looks in the data files to find the identifier of the last checkpoint.
+Searches in the journal files for the record that matches the identifier of the last checkpoint.
+Apply the operations in the journal files since the last checkpoint.
+
+Journal Files
+For the journal files, MongoDB creates a subdirectory named journal under the dbPath directory. WiredTiger journal files have names with the following format WiredTigerLog.<sequence> where <sequence> is a zero-padded number starting from 0000000001.
+
+Write Concern
+Write concern describes the level of acknowledgement requested from MongoDB for write operations to a standalone mongod or to replica sets or to sharded clusters. In sharded clusters, mongos instances will pass the write concern on to the shards.
+
+{ w: <value>, j: <boolean>, wtimeout: <number> }
+The w option to request acknowledgement that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags.
+the j option to request acknowledgement that the write operation has been written to the journal, and
+the wtimeout option to specify a time limit to prevent write operations from blocking indefinitely.
 
 ####################################### 
 
