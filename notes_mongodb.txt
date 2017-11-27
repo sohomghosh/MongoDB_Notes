@@ -223,6 +223,8 @@ db.restaurants.create_index([
     ("address.zipcode", pymongo.DESCENDING)
 ])
 
+#If make a index on combined (a,b,c) the other indexes will also be created like (a), (a,b), (a,b,c). 
+But not (b) or (c) or (a,c) or (b,c)
 
 #Update Top-Level Fields
 #The following operation updates the first document with name equal to "Juni", using the $set operator to update the cuisine field and the $currentDate operator to update the lastModified field with the current date.
