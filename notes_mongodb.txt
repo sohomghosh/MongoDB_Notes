@@ -136,6 +136,8 @@ for i in mydb.compTenure.find():
 	-> Range Based Sharding: Consider a numeric shard key: If you visualize a number line that goes from negative infinity to positive infinity, each value of the shard key falls at some point on that line. MongoDB partitions this line into smaller, non-overlapping ranges called chunks. It is a range of values from some minimum value to some maximum value (shown below). In a range based partitioning system, documents with “close” shard key values are most probably in the same chunk, and thus on the same shard.
 	-> Hash Based Sharding: For hash based partitioning, MongoDB computes a hash -A hash value is a numeric value of a fixed length that uniquely identifies data. These values represent large amounts of data as much smaller numeric values of a field’s value, and then uses these hashes to create chunks (shown below). With hash based partitioning, two documents with “close” shard key values are unlikely to be part of the same chunk. This ensures a more random distribution of a collection in the cluster.
 
+If number of documents in one server increases beyond a threshold (suppose 50% or 70%) then the documents are moved to the subsequent servers.
+
 #Aggregation: Aggregations are operations that process data records and return computed results. Unlike queries, aggregation operations in MongoDB use collections of documents as an input and return results in the form of one or more documents. MapReduce is a tool used for aggregating data.
 	Single Purpose Aggregation Operations
 	MapReduce based aggregation
