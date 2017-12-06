@@ -53,6 +53,9 @@ mydb.collections
 #mydb.create_collection('new_post_collection')
 #mydb.new_post_collection.drop()
 
+#client with authentication
+client = MongoClient('mongodb://<localhost or server ip>:27017/', username='user', password='password', authSource='the_database')
+
 import datetime
 post = {"author": "Duke 5","title" : "PyMongo 101 - 5","tags" : ["MongoDB 5", "PyMongo 101 - A5", "Tutorial 5"],"date" : datetime.datetime.utcnow()}
 
