@@ -71,7 +71,8 @@ mydb.new_post_collection.insert(new_posts)
 for post in mydb.new_post_collection.find({"author": "Adja"}):
 	print(post)
 
-for post in mydb.new_post_collection.find():
+#Avoid errors like: pymongo.errors.CursorNotFound: Cursor not found, cursor id
+for post in mydb.new_post_collection.find(no_cursor_timeout=False):
 	print(post)
 
 mydb.new_post_collection.find_one({"author": "Duke 5"})
