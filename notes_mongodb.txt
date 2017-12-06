@@ -495,6 +495,8 @@ var dataLogger=db.getSiblingDB("dataLogger");
 /opt/mongoDB3.2/bin/mongoexport --port 17089   --db database_name --collection collection_name   -q '{"d":"h","ts":{$gte:"1472688000"} }' --type=csv --fields f.field1,f.field2 --out /tmp/table_exported.csv
 
 /opt/mongoDB3.2/bin/mongo --port 17449 name_of_javascript_file.js >exported_file.csv
+/opt/mongoDB3.2/bin/mongo --host <host_ip> --port 17449 --username <user_name> --password <password> name_of_javascript_file.js >exported_file.csv
+
 
 #################################### COMPARISON OF MONGODB WITH SQL######################################
 https://docs.mongodb.com/manual/reference/sql-aggregation-comparison/
