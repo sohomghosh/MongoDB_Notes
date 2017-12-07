@@ -496,11 +496,24 @@ var fDate=new Date();
 
 var dataLogger=db.getSiblingDB("dataLogger");
 
-/opt/mongoDB3.2/bin/mongoexport --port 17089   --db database_name --collection collection_name   -q '{"d":"h","ts":{$gte:"1472688000"} }' --type=csv --fields f.field1,f.field2 --out /tmp/table_exported.csv
+/opt/mongoDB3.2/bin/mongoexport --port 17089   --db database_name --collection collection_name   -q '{"d":"h","ts":{$gte:"1472688000"} }' --type=csv --fields field1,field2 --out /tmp/table_exported.csv
+
+//Inside q we keep the query i.e. the bock inside find{}
+
+
+//WITHOUT_QUERY
+/opt/mongoDB3.2/bin/mongoexport --port 17089   --db database_name --collection collection_name --type=csv --fields field1,field2 --out /tmp/table_exported.csv
+
 
 /opt/mongoDB3.2/bin/mongo --port 17449 name_of_javascript_file.js >exported_file.csv
-/opt/mongoDB3.2/bin/mongo --host <host_ip> --port 17449 --username <user_name> --password <password> name_of_javascript_file.js >exported_file.csv
+/opt/mongoDB3.2/bin/mongo --host <host_ip> --port 17449 --username <user_name> --password <password> --authenticationDatabase database_name name_of_javascript_file.js >exported_file.csv
 
+
+
+//database_name name_of_javascript_file.js
+var dataBase=db.getSiblingDB("database_name");
+var data=dataBase.getCollection('collection_name').find({},{"filed1":1, "field2":1, "_id":0}).toArray();
+print(data);
 
 #################################### COMPARISON OF MONGODB WITH SQL######################################
 https://docs.mongodb.com/manual/reference/sql-aggregation-comparison/
