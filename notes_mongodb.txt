@@ -509,6 +509,11 @@ var dataLogger=db.getSiblingDB("dataLogger");
 /opt/mongoDB3.2/bin/mongo --host <host_ip> --port 17449 --username <user_name> --password <password> --authenticationDatabase database_name name_of_javascript_file.js >exported_file.csv
 
 
+#Start mongo shell from remote server
+/opt/mongoDB3.2/bin/mongo --host <host_ip> --port 17449 --username <user_name> --password <password> --authenticationDatabase
+
+#If get errors like error: { "$err" : "not master and slaveOk=false", "code" : 13435 }
+rs.slaveOk()
 
 //database_name name_of_javascript_file.js
 var dataBase=db.getSiblingDB("database_name");
