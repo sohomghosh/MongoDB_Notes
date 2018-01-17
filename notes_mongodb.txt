@@ -99,6 +99,16 @@ for doc in results:
 #How many documents match a query - count()
 mydb.new_post_collection.count()
 
+## update using pymongo
+for post in mydb.new_post_collection.find(no_cursor_timeout=False):
+	mydb.new_post_collection.update_one({
+  	'_id': post['_id']
+	},{
+  	'$set': {
+    	'<filed_name>': <new_value>
+  	}
+	}, upsert=False)
+
 ----------------------------------------------------------------
 
 query = {
