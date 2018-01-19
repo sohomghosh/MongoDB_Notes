@@ -345,6 +345,10 @@ cursor = db.restaurants.aggregate(
 #Text Index
 db.stores.createIndex( { name: "text", description: "text" } )
 
+db.Employee.createIndex({Employeeid:1})
+#The createIndex method is used to create an index based on the "Employeeid" of the document
+#The '1' parameter indicates that when the index is created with the "Employeeid" Field values, they should be sorted in ascending order. Please note that this is different from the _id field (The id field is used to uniquely identify each document in the collection) which is created automatically in the collection by MongoDB. The documents will now be sorted as per the Employeeid and not the _id field.
+#Source: https://www.guru99.com/working-mongodb-indexes.html
 
 $text Operator
 $text will tokenize the search string using whitespace and most punctuation as delimiters, and perform a logical OR of all such tokens in the search string. For example, you could use the following query to find all stores containing any terms from the list “coffee”, “shop”, and “java”:
