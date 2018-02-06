@@ -204,6 +204,11 @@ cursor = db.restaurants.find()
 #Syntax: { <field1>: <value1>, <field2>: <value2>, ... }
 cursor = db.restaurants.find({"borough": "Manhattan"})
 
+#sample choose random form records of mongodb
+db.users.aggregate(
+   [ { $sample: { size: 3 } } ]
+)
+
 ##Query by a Field in an Embedded Document
 #The following operation specifies an equality condition on the zipcode field in the address embedded document.
 cursor = db.restaurants.find({"address.zipcode": "10075"})
