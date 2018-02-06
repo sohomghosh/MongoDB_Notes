@@ -200,6 +200,14 @@ If number of documents in one server increases beyond a threshold (suppose 50% o
 #Find all documents
 cursor = db.restaurants.find()
 
+#filter by timestamp #unix timestamp conversion from https://www.unixtimestamp.com/index.php
+db.getCollection('collection_name').find({"filed_1":"value_of_field_1", "ts":{$gte:"1509494400",$lt:"1517356800"}},{"field_to_be_selected":1,"_id":0}).forEach(function(doc){
+	print(doc);
+}
+);
+
+
+
 ##Query by a Top Level Field
 #Syntax: { <field1>: <value1>, <field2>: <value2>, ... }
 cursor = db.restaurants.find({"borough": "Manhattan"})
