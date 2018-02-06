@@ -209,6 +209,9 @@ db.users.aggregate(
    [ { $sample: { size: 3 } } ]
 )
 
+#filter and sample
+#to do this use $match within aggregated function
+
 #select certain fileds from a collection
 db.inventory.find( { status: "A" }, { item: 1, status: 1 } )
 
