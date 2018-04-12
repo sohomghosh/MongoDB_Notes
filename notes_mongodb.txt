@@ -473,6 +473,9 @@ mongodump --host HOST_NAME --port PORT_NUMBER
 mongodump --dbpath DB_PATH --out BACKUP_DIRECTORY
 mongodump --collection COLLECTION --db DB_NAME
 
+#see fields / columns which are indexed in a collection of a database
+db.name_of_collection.getIndexes()
+
 #mongodb restore
 mongorestore
 
